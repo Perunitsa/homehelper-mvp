@@ -1,26 +1,205 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Уютная тёплая палитра */
+  --cream: #faf6f0;
+  --cream-dark: #f0e8d8;
+  --beige: #e8dcc8;
+  --beige-dark: #d4c4a8;
+  --warm-brown: #8b6f4e;
+  --warm-brown-dark: #6b5238;
+  --olive: #7a8b5c;
+  --olive-light: #9ba87e;
+  --olive-dark: #5c6a42;
+  --mint: #a8c5b8;
+  --mint-light: #c5ddd0;
+  --peach: #f0c8a0;
+  --peach-dark: #e0a878;
+  --rose-muted: #d4a0a0;
+  --gold-soft: #d4a84b;
+  --gold-soft-dark: #b8903a;
+  --text-primary: #3a2e1f;
+  --text-secondary: #6b5d4a;
+  --text-muted: #9a8b76;
+  --white-soft: #fefcf8;
+  --shadow-soft: rgba(139, 111, 78, 0.12);
+  --shadow-medium: rgba(139, 111, 78, 0.2);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--cream);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Мягкие скроллбары */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--cream-dark);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--beige-dark);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--warm-brown);
+}
+
+/* Акварельные карточки */
+.card-cozy {
+  background: var(--white-soft);
+  border: 1px solid var(--beige);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px var(--shadow-soft);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card-cozy:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px var(--shadow-medium);
+}
+
+/* Кнопки */
+.btn-cozy {
+  background: var(--olive);
+  color: var(--white-soft);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.btn-cozy:hover {
+  background: var(--olive-dark);
+  transform: translateY(-1px);
+}
+.btn-cozy:active {
+  transform: translateY(0);
+}
+
+.btn-cozy-secondary {
+  background: var(--peach);
+  color: var(--text-primary);
+}
+.btn-cozy-secondary:hover {
+  background: var(--peach-dark);
+}
+
+/* Поля ввода */
+.input-cozy {
+  background: var(--white-soft);
+  border: 2px solid var(--beige);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  color: var(--text-primary);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+}
+.input-cozy:focus {
+  outline: none;
+  border-color: var(--olive-light);
+  box-shadow: 0 0 0 3px rgba(155, 168, 126, 0.2);
+}
+.input-cozy::placeholder {
+  color: var(--text-muted);
+}
+
+/* Заголовки с рукописным шрифтом */
+.heading-handwritten {
+  font-family: 'Caveat', cursive;
+  color: var(--warm-brown);
+}
+
+/* Анимация покачивания */
+@keyframes sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+.sway {
+  animation: sway 4s ease-in-out infinite;
+}
+
+/* Мягкое появление */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+/* Пульс для растений */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+.breathe {
+  animation: breathe 6s ease-in-out infinite;
+}
+
+/* Акварельный градиент для шапки */
+.watercolor-gradient {
+  background: linear-gradient(135deg, var(--mint-light) 0%, var(--cream) 30%, var(--peach) 70%, var(--beige) 100%);
+}
+
+/* Разделитель с растением */
+.divider-leaf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--olive-light);
+}
+.divider-leaf::before,
+.divider-leaf::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--beige);
+}
+
+/* Бейдж XP (мягкая геймификация) */
+.xp-badge {
+  background: linear-gradient(135deg, var(--gold-soft), var(--peach));
+  color: var(--text-primary);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 1px 6px rgba(212, 168, 75, 0.2);
+}
+
+/* Уровень — мягкая карточка */
+.level-card {
+  background: linear-gradient(135deg, var(--mint-light), var(--cream));
+  border: 1px solid var(--beige);
+  border-radius: 16px;
+  padding: 16px 20px;
 }
