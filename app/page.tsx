@@ -23,10 +23,10 @@ export default function Home() {
           </p>
 
           <div className="flex flex-wrap gap-4">
-            <Link href="/auth" className="btn-cozy">
+            <Link href="/auth?intent=start" className="btn-cozy">
               Начать
             </Link>
-            <Link href="/auth" className="btn-cozy btn-cozy-secondary">
+            <Link href="/auth?intent=login" className="btn-cozy btn-cozy-secondary">
               Войти
             </Link>
           </div>

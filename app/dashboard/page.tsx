@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { signOutAction } from "@/app/auth/actions";
+import BottomNav from "@/app/_components/BottomNav";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +31,36 @@ export default async function DashboardPage() {
   if (!profile?.family_id) {
     redirect("/onboarding");
   }
+
+  const { data: taskOfDay } = await supabase
+    .from("tasks")
+    .select("id, title, points, icon, status, deadline")
+    .eq("family_id", profile.family_id)
+    .eq("assigned_to", user.id)
+    .in("status", ["pending", "in_review"])
+    .order("deadline", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  const { data: leaderboard } = await supabase
+    .from("profiles")
+    .select("id, first_name, current_xp")
+    .eq("family_id", profile.family_id)
+    .order("current_xp", { ascending: false })
+    .limit(3);
+
+  const { data: notifications } = await supabase
+    .from("notifications")
+    .select("id, title, message, is_read, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(3);
+
+  const { count: unreadCount } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("is_read", false);
 
   const xpForLevel = 100;
   const xpProgress = profile.current_xp % xpForLevel;
@@ -122,7 +154,10 @@ export default async function DashboardPage() {
             </h2>
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="card-cozy p-6 text-center hover:border-olive-light transition-colors">
+              <Link
+                href="/tasks"
+                className="card-cozy p-6 text-center hover:border-olive-light transition-colors"
+              >
                 <span className="text-3xl breathe inline-block mb-3">📋</span>
                 <h3 className="heading-handwritten text-xl text-brown">
                   Квесты
@@ -130,9 +165,12 @@ export default async function DashboardPage() {
                 <p className="text-text-muted text-sm mt-1">
                   Задачи и поручения
                 </p>
-              </div>
+              </Link>
 
-              <div className="card-cozy p-6 text-center hover:border-olive-light transition-colors">
+              <Link
+                href="/shop"
+                className="card-cozy p-6 text-center hover:border-olive-light transition-colors"
+              >
                 <span className="text-3xl sway inline-block mb-3">🛒</span>
                 <h3 className="heading-handwritten text-xl text-brown">
                   Покупки
@@ -140,9 +178,12 @@ export default async function DashboardPage() {
                 <p className="text-text-muted text-sm mt-1">
                   Списки покупок
                 </p>
-              </div>
+              </Link>
 
-              <div className="card-cozy p-6 text-center hover:border-olive-light transition-colors">
+              <Link
+                href="/shop"
+                className="card-cozy p-6 text-center hover:border-olive-light transition-colors"
+              >
                 <span className="text-3xl breathe inline-block mb-3">📦</span>
                 <h3 className="heading-handwritten text-xl text-brown">
                   Инвентарь
@@ -150,9 +191,12 @@ export default async function DashboardPage() {
                 <p className="text-text-muted text-sm mt-1">
                   Продукты и сроки
                 </p>
-              </div>
+              </Link>
 
-              <div className="card-cozy p-6 text-center hover:border-olive-light transition-colors">
+              <Link
+                href="/stats"
+                className="card-cozy p-6 text-center hover:border-olive-light transition-colors"
+              >
                 <span className="text-3xl sway inline-block mb-3">📊</span>
                 <h3 className="heading-handwritten text-xl text-brown">
                   Статистика
@@ -160,9 +204,89 @@ export default async function DashboardPage() {
                 <p className="text-text-muted text-sm mt-1">
                   Прогресс семьи
                 </p>
-              </div>
+              </Link>
             </div>
           </section>
+
+          {/* Задача дня */}
+          {taskOfDay && (
+            <Link href="/tasks" className="card-cozy p-6 border-l-4 border-mint">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="heading-handwritten text-2xl text-brown mb-2">
+                    Задача дня
+                  </h3>
+                  <p className="text-text-primary font-medium">
+                    {taskOfDay.title}
+                  </p>
+                  <p className="text-text-muted text-sm mt-1">
+                    Reward: {taskOfDay.points} XP
+                  </p>
+                </div>
+                <span className="xp-badge text-sm px-4 py-2">CLAIM QUEST</span>
+              </div>
+            </Link>
+          )}
+
+          {/* Family leaderboard */}
+          {(leaderboard ?? []).length > 0 && (
+            <div className="card-cozy p-6">
+              <h3 className="heading-handwritten text-2xl text-brown mb-4">
+                Family leaderboard
+              </h3>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {(leaderboard ?? []).map((p, idx) => (
+                  <div
+                    key={p.id}
+                    className="bg-cream-dark border border-beige rounded-xl px-4 py-4"
+                  >
+                    <div className="text-xs text-text-muted mb-1">#{idx + 1}</div>
+                    <div className="font-medium text-text-primary">
+                      {p.first_name || "—"}
+                    </div>
+                    <div className="text-xs text-text-muted mt-1">
+                      {p.current_xp ?? 0} XP
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Уведомления */}
+          <Link href="/notifications" className="card-cozy p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="heading-handwritten text-2xl text-brown mb-1">
+                  Уведомления
+                </h3>
+                <p className="text-text-muted text-sm">
+                  Непрочитанных: {unreadCount ?? 0}
+                </p>
+              </div>
+              <span className="xp-badge text-sm px-4 py-2">Открыть</span>
+            </div>
+            {(notifications ?? []).length > 0 && (
+              <div className="mt-4 grid gap-2">
+                {(notifications ?? []).map((n) => (
+                  <div
+                    key={n.id}
+                    className={[
+                      "bg-cream-dark border border-beige rounded-xl px-4 py-3",
+                      n.is_read ? "opacity-80" : "",
+                    ].join(" ")}
+                  >
+                    <div className="text-sm font-medium text-text-primary">
+                      {n.title}
+                    </div>
+                    <div className="text-xs text-text-muted mt-1 truncate">
+                      {n.message}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Link>
 
           {/* Код приглашения (для новых пользователей) */}
           {family?.invite_code && (
@@ -205,12 +329,7 @@ export default async function DashboardPage() {
         </div>
       </main>
 
-      {/* Футер */}
-      <footer className="bg-cream-dark border-t border-beige px-6 py-6 text-center">
-        <p className="text-text-muted text-sm">
-          HomeHelper — сделан с любовью к дому 🏡
-        </p>
-      </footer>
+      <BottomNav />
     </div>
   );
 }

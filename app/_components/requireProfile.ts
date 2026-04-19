@@ -1,9 +1,7 @@
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import OnboardingClient from "./client";
 
-export default async function OnboardingPage() {
+export async function requireProfile() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -15,17 +13,13 @@ export default async function OnboardingPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("family_id")
+    .select("id, first_name, role, family_id, current_xp, level, expiry_notify_days")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (profile?.family_id) {
-    redirect("/dashboard");
+  if (!profile?.family_id) {
+    redirect("/onboarding");
   }
 
-  return (
-    <Suspense fallback={<div className="min-h-full flex-1" />}>
-      <OnboardingClient />
-    </Suspense>
-  );
+  return { supabase, user, profile };
 }
