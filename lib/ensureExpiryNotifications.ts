@@ -59,7 +59,7 @@ export async function ensureExpiryNotifications(params: {
 
   if (rows.length === 0) return;
 
-  const { error } = await params.supabase.from("notifications").insert(rows, {
+  const { error } = await params.supabase.from("notifications").upsert(rows, {
     onConflict: "user_id,dedupe_key",
     ignoreDuplicates: true,
   });
