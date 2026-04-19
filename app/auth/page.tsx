@@ -1,10 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signUpOrSignInAction } from "./actions";
 
 export default function AuthPage() {
+  return (
+    <Suspense fallback={<AuthPageContent />}>
+      <AuthPageContent />
+    </Suspense>
+  );
+}
+
+function AuthPageContent() {
   const searchParams = useSearchParams();
   const intent = searchParams.get("intent"); // "start" | "login" | null
 
