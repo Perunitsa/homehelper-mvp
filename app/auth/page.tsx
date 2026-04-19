@@ -4,15 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signUpOrSignInAction } from "./actions";
 
-export default function AuthPage() {
-  return (
-    <Suspense fallback={<AuthPageContent />}>
-      <AuthPageContent />
-    </Suspense>
-  );
-}
-
-function AuthPageContent() {
+function AuthForm() {
   const searchParams = useSearchParams();
   const intent = searchParams.get("intent"); // "start" | "login" | null
 
@@ -148,5 +140,13 @@ function AuthPageContent() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<div className="min-h-full flex-1 flex items-center justify-center bg-cream">Загрузка...</div>}>
+      <AuthForm />
+    </Suspense>
   );
 }
