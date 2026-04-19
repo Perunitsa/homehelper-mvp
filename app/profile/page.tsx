@@ -106,7 +106,7 @@ export default async function ProfilePage({
                 <select
                   name="expiryNotifyDays"
                   className="input-cozy"
-                  defaultValue={(profile as any).expiry_notify_days ?? 3}
+                  defaultValue={profile.expiry_notify_days ?? 3}
                 >
                   <option value="0">Выключить</option>
                   <option value="1">За 1 день</option>

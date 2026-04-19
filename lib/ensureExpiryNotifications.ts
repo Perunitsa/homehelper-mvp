@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 type ExpiryProduct = {
   id: string;
   name: string;
@@ -20,7 +22,7 @@ function daysUntil(dateYmd: string) {
 }
 
 export async function ensureExpiryNotifications(params: {
-  supabase: any;
+  supabase: SupabaseClient;
   userId: string;
   notifyDays: number;
   products: ExpiryProduct[];
@@ -67,4 +69,3 @@ export async function ensureExpiryNotifications(params: {
     console.warn("ensureExpiryNotifications:", error);
   }
 }
-

@@ -29,7 +29,7 @@ export default async function ShopPage({
 }: {
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
-  const { supabase, user, profile } = await requireProfile();
+  const { supabase, profile } = await requireProfile();
   const error =
     typeof searchParams?.error === "string"
       ? decodeURIComponent(searchParams.error)

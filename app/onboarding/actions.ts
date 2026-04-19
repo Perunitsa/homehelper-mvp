@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -21,8 +22,8 @@ async function getUser() {
 }
 
 async function createFamilyWithName(params: {
-  supabase: any;
-  user: any;
+  supabase: SupabaseClient;
+  user: User;
   familyName: string;
   firstName: string;
 }) {
