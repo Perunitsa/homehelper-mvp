@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, useSearchParams } from "react";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import AuthForm from "./AuthForm";
 
 function AuthFormWrapper() {
