@@ -41,3 +41,6 @@ qwen-code-export-*.json
 # Local Supabase state
 supabase/.temp/
 supabase/.branches/
+
+*.png
+*.pdf

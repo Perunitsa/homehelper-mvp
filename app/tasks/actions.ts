@@ -123,7 +123,7 @@ export async function approveTaskAction(formData: FormData) {
 
   const { supabase, profile } = await getSession();
   if (profile.role !== "parent") {
-    redirect("/tasks?error=Р”РѕСЃС‚СѓРї Р·Р°РїСЂРµС‰С‘РЅ");
+    redirect("/tasks?error=Доступ запрещён");
   }
 
   const { data: task, error: taskError } = await supabase
@@ -138,11 +138,11 @@ export async function approveTaskAction(formData: FormData) {
   }
 
   if (!task || task.family_id !== profile.family_id) {
-    redirect("/tasks?error=Р—Р°РґР°С‡Р° РЅРµ РЅР°Р№РґРµРЅР°");
+    redirect("/tasks?error=Задача не найдена");
   }
 
   if (task.status !== "in_review") {
-    redirect("/tasks?error=Р—Р°РґР°С‡Р° РЅРµ РЅР° РїСЂРѕРІРµСЂРєРµ");
+    redirect("/tasks?error=Задача не на проверке");
   }
 
   const completedAt = new Date().toISOString();
