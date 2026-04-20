@@ -3,6 +3,7 @@ import BottomNav from "@/app/_components/BottomNav";
 import { signOutAction } from "@/app/auth/actions";
 import { updateExpiryNotifyDaysAction } from "./actions";
 import { createClient } from "@/lib/supabase/server";
+import ProfileClient from "./ProfileClient";
 
 export const dynamic = "force-dynamic";
 
@@ -123,9 +124,10 @@ export default async function ProfilePage({
               </p>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-6 flex flex-col gap-3">
+              <ProfileClient />
               <form action={signOutAction}>
-                <button className="btn-cozy btn-cozy-secondary" type="submit">
+                <button className="btn-cozy btn-cozy-secondary w-full" type="submit">
                   Выйти
                 </button>
               </form>

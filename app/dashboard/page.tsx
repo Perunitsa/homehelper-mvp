@@ -6,6 +6,7 @@ import RewardConfettiListener from "@/app/_components/RewardConfettiListener";
 import { signOutAction } from "@/app/auth/actions";
 import { quickAddProductAction } from "./actions";
 import { createClient } from "@/lib/supabase/server";
+import OnboardingAutoTrigger from "@/app/_components/OnboardingAutoTrigger";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ export default async function DashboardPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, first_name, role, family_id, current_xp, level")
+    .select("id, first_name, role, family_id, current_xp, level, has_seen_onboarding")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -233,6 +234,7 @@ export default async function DashboardPage({
       </main>
 
       <BottomNav />
+      <OnboardingAutoTrigger hasSeenOnboarding={profile.has_seen_onboarding} />
     </div>
   );
 }

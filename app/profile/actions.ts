@@ -37,3 +37,24 @@ export async function updateExpiryNotifyDaysAction(formData: FormData) {
   redirect("/profile");
 }
 
+export async function markOnboardingSeenAction() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ has_seen_onboarding: true })
+    .eq("id", user.id);
+
+  if (error) {
+    console.error("markOnboardingSeenAction:", error);
+    return { error: error.message };
+  }
+
+  return { success: true };
+}
+
