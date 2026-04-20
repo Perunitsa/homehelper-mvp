@@ -24,9 +24,9 @@ export default function OnboardingClient() {
     setLoading(true);
     try {
       const result = await createFamilyAction();
-      if (result?.error) {
+      if ("error" in result) {
         setError(result.error);
-      } else if (result?.inviteCode) {
+      } else {
         // Сохраняем код и переходим на dashboard
         sessionStorage.setItem("inviteCode", result.inviteCode);
         window.location.href = "/dashboard";
