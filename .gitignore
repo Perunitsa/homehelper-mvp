@@ -2,18 +2,22 @@
 # Dependencies
 node_modules/
 
-# Environment
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment variables
 .env
 .env.local
 .env.*
 
-# Logs and temp files
-*.log
-*.tmp
-
-# Editors
+# IDE files
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # Python
 __pycache__/
@@ -34,19 +38,10 @@ nosetests.xml
 coverage.xml
 *.cover
 *.log
-.git/
-.mypy_cache/
-.pytest_cache/
-.hypothesis/
+*.tmp
 
-# Build artifacts
-build/
-dist/
-*.egg
-*.egg-info/
-*.so
-.libs/
-.deps/
+# Logs
+*.log
 
 # OS generated files
 .DS_Store
