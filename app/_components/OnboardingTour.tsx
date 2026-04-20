@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, ChevronRight, ChevronLeft, Home, ShoppingBasket, ClipboardList, BarChart3, CheckCircle2 } from "lucide-react";
+import { X, ChevronLeft, Home, ShoppingBasket, ClipboardList, BarChart3, CheckCircle2 } from "lucide-react";
 
 type Step = {
   title: string;
