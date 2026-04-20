@@ -183,6 +183,15 @@ export async function approveTaskAction(formData: FormData) {
     redirect(`/tasks?error=${encodeURIComponent(updateProfileError.message)}`);
   }
 
+  const { error: badgeErr } = await supabase.from("achievement_events").insert({
+    user_id: task.assigned_to,
+    title: `Completed: ${task.id.slice(0, 6)}`,
+    icon: "sparkles",
+  });
+  if (badgeErr) {
+    console.warn("approveTaskAction insert achievement_events:", badgeErr);
+  }
+
   // Уведомление исполнителю о подтверждении (US-02 в демо-виде: in-app notifications).
   const { error: notifErr } = await supabase.from("notifications").insert({
     user_id: task.assigned_to,

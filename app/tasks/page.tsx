@@ -6,6 +6,7 @@ import {
   rejectTaskAction,
   submitTaskAction,
 } from "./actions";
+import RewardConfettiListener from "@/app/_components/RewardConfettiListener";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,9 @@ export default async function TasksPage({
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
   const { supabase, profile } = await requireProfile();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const error =
     typeof searchParams?.error === "string"
       ? decodeURIComponent(searchParams.error)
@@ -61,6 +65,7 @@ export default async function TasksPage({
 
   return (
     <div className="min-h-full bg-cream flex flex-col">
+      {profile.role === "child" && user?.id && <RewardConfettiListener userId={user.id} />}
       <header className="watercolor-gradient px-6 py-8 sm:px-12 relative overflow-hidden">
         <div className="max-w-5xl mx-auto flex items-start justify-between gap-6">
           <div>

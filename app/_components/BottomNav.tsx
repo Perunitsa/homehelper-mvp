@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,12 +10,12 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { href: "/dashboard", label: "Home", icon: "🏠" },
-  { href: "/tasks", label: "Tasks", icon: "📋" },
-  { href: "/shop", label: "Shop", icon: "🛒" },
-  { href: "/stats", label: "Stats", icon: "📊" },
-  { href: "/notifications", label: "Notify", icon: "🔔" },
-  { href: "/profile", label: "Profile", icon: "👤" },
+  { href: "/dashboard", label: "Home", icon: "рџЏ " },
+  { href: "/tasks", label: "Tasks", icon: "рџ“‹" },
+  { href: "/inventory", label: "Inventory", icon: "рџ›’" },
+  { href: "/stats", label: "Stats", icon: "рџ“Љ" },
+  { href: "/notifications", label: "Notify", icon: "рџ””" },
+  { href: "/profile", label: "Profile", icon: "рџ‘¤" },
 ];
 
 export default function BottomNav() {
@@ -50,3 +50,4 @@ export default function BottomNav() {
     </nav>
   );
 }
+
