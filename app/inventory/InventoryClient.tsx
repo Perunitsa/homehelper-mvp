@@ -401,10 +401,32 @@ export default function InventoryClient({ familyId, role }: InventoryClientProps
                           {item.quantity ?? 1} {item.unit ?? "pcs"}
                         </div>
                       </div>
-                      <span className="inline-flex items-center text-xs text-text-secondary">
-                        <Check className="w-4 h-4 mr-1" />
-                        {item.is_purchased ? "Done" : "Mark done"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {item.is_purchased && role === "parent" && (
+                          <button
+                            type="button"
+                            className="btn-cozy py-1 px-3 text-[10px] bg-gold-soft hover:bg-gold-soft-dark"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const nextWeek = new Date();
+                              nextWeek.setDate(nextWeek.getDate() + 7);
+                              const fd = new FormData();
+                              fd.append("name", item.product_name);
+                              fd.append("quantity", String(item.quantity || 1));
+                              fd.append("unit", item.unit || "pcs");
+                              fd.append("category", item.category || "");
+                              fd.append("expiryDate", nextWeek.toISOString().slice(0, 10));
+                              addProductMutation.mutate(fd);
+                            }}
+                          >
+                            + Inventory
+                          </button>
+                        )}
+                        <span className="inline-flex items-center text-xs text-text-secondary">
+                          <Check className="w-4 h-4 mr-1" />
+                          {item.is_purchased ? "Done" : "Mark done"}
+                        </span>
+                      </div>
                     </button>
                   ))}
                 </div>

@@ -58,10 +58,22 @@ export default async function TasksPage({
     (members ?? []).map((m) => [m.id, m] as const),
   );
 
-  const visibleTasks =
+  const visibleTasksRaw =
     profile.role === "parent"
       ? tasks ?? []
       : (tasks ?? []).filter((t) => t.assigned_to === profile.id);
+
+  const visibleTasks = await Promise.all(
+    visibleTasksRaw.map(async (t) => {
+      if (t.photo_proof_url && profile.role === "parent" && t.status === "in_review") {
+        const { data } = await supabase.storage
+          .from("task-proofs")
+          .createSignedUrl(t.photo_proof_url, 3600);
+        return { ...t, signed_proof_url: data?.signedUrl };
+      }
+      return { ...t, signed_proof_url: null };
+    })
+  );
 
   return (
     <div className="min-h-full bg-cream flex flex-col">
@@ -133,10 +145,9 @@ export default async function TasksPage({
                       Выберите
                     </option>
                     {(members ?? [])
-                      .filter((m) => m.role === "child")
                       .map((m) => (
                         <option key={m.id} value={m.id}>
-                          {m.first_name || "Ребёнок"}
+                          {m.first_name || "Пользователь"} ({m.role === 'child' ? 'Ребёнок' : 'Родитель'})
                         </option>
                       ))}
                   </select>
@@ -182,10 +193,9 @@ export default async function TasksPage({
                   </button>
                 </div>
               </form>
-              {(members ?? []).filter((m) => m.role === "child").length === 0 && (
+              {(members ?? []).length <= 1 && (
                 <p className="text-text-muted text-sm mt-4">
-                  Сейчас в семье нет детей. Создайте второго пользователя и присоедините его как
-                  ребёнка по коду приглашения.
+                  Вы можете назначить задачу себе или пригласить членов семьи по коду в профиле.
                 </p>
               )}
             </section>
@@ -263,11 +273,19 @@ export default async function TasksPage({
 
                         {profile.role === "parent" && t.status === "in_review" && (
                           <div className="space-y-3">
-                            {t.photo_proof_url && (
-                              <div className="text-sm text-text-secondary">
-                                Proof: <span className="font-mono">{t.photo_proof_url}</span>
+                            {t.signed_proof_url ? (
+                              <div className="rounded-xl overflow-hidden border border-beige aspect-video bg-cream-dark flex items-center justify-center">
+                                <img 
+                                  src={t.signed_proof_url} 
+                                  alt="Task proof" 
+                                  className="w-full h-full object-cover"
+                                />
                               </div>
-                            )}
+                            ) : t.photo_proof_url ? (
+                              <div className="text-xs text-text-muted italic">
+                                Proof uploaded, but failed to load image.
+                              </div>
+                            ) : null}
                             <form action={approveTaskAction}>
                               <input type="hidden" name="taskId" value={t.id} />
                               <button className="btn-cozy w-full" type="submit">

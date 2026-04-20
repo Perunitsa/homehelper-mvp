@@ -52,40 +52,106 @@ export default async function StatsPage() {
       </header>
 
       <main className="flex-1 px-6 py-8 sm:px-12">
-        <div className="max-w-5xl mx-auto grid gap-6 lg:grid-cols-2">
+        <div className="max-w-5xl mx-auto space-y-8">
           <section className="card-cozy p-6">
-            <h2 className="heading-handwritten text-2xl text-brown mb-4">Family Leaderboard</h2>
+            <h2 className="heading-handwritten text-3xl text-brown mb-6">Family Leaderboard</h2>
             {(leaderboard ?? []).length === 0 ? (
-              <p className="text-text-secondary">No data yet.</p>
+              <p className="text-text-secondary italic">No activity data yet.</p>
             ) : (
-              <div className="space-y-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {(leaderboard ?? []).map((u, idx) => (
                   <div
                     key={u.id}
-                    className="bg-cream-dark border border-beige rounded-xl px-4 py-3 flex items-center justify-between"
+                    className="bg-white-soft border border-beige rounded-2xl p-5 shadow-sm flex items-center justify-between group hover:border-olive-light transition-colors"
                   >
-                    <div>
-                      <div className="text-xs text-text-muted">#{idx + 1}</div>
-                      <div className="font-medium text-text-primary">{u.first_name || "-"}</div>
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                        idx === 0 ? 'bg-gold-soft text-brown' : 'bg-cream-dark text-text-muted'
+                      }`}>
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <div className="font-bold text-text-primary">{u.first_name || "User"}</div>
+                        <div className="text-[10px] uppercase tracking-wider text-text-muted">{u.role}</div>
+                      </div>
                     </div>
-                    <div className="text-sm text-text-secondary">{u.current_xp ?? u.points ?? 0} XP</div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-brown">{u.current_xp ?? 0}</div>
+                      <div className="text-[10px] text-text-muted uppercase">Total XP</div>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
           </section>
 
+          <div className="grid gap-8 lg:grid-cols-2">
+            <section className="card-cozy p-6">
+              <h2 className="heading-handwritten text-3xl text-brown mb-6">Family Achievements</h2>
+              <div className="grid grid-cols-3 gap-4">
+                {[
+                  { title: "Clean Master", icon: "🧹", earned: true },
+                  { title: "Chef Helper", icon: "🍳", earned: true },
+                  { title: "Exp Hero", icon: "✨", earned: false },
+                  { title: "Shopping Pro", icon: "🛒", earned: false },
+                  { title: "Stock Keeper", icon: "📦", earned: false },
+                  { title: "Speedy", icon: "⚡", earned: false },
+                ].map((a, i) => (
+                  <div 
+                    key={i} 
+                    className={`aspect-square rounded-2xl border-2 border-dashed flex flex-col items-center justify-center p-2 text-center transition-all ${
+                      a.earned ? 'bg-mint-light/20 border-olive/30 opacity-100 scale-100' : 'bg-cream-dark/50 border-beige opacity-40 grayscale scale-95'
+                    }`}
+                  >
+                    <span className="text-3xl mb-1">{a.icon}</span>
+                    <span className="text-[10px] font-bold leading-tight">{a.title}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-text-muted mt-6 text-center italic">Complete more quests to unlock family-wide badges!</p>
+            </section>
+
+            <section className="card-cozy p-6">
+              <h2 className="heading-handwritten text-3xl text-brown mb-6">Weekly Activity</h2>
+              <div className="h-48 flex items-end justify-around gap-2 px-2 pb-6 border-b border-beige">
+                {[
+                  { label: "WK1", val: 40 },
+                  { label: "WK2", val: 75 },
+                  { label: "WK3", val: 55 },
+                  { label: "WK4", val: 95 },
+                ].map((wk) => (
+                  <div key={wk.label} className="flex-1 flex flex-col items-center gap-2">
+                    <div 
+                      className="w-full max-w-[40px] bg-gradient-to-t from-olive to-olive-light rounded-t-lg shadow-inner transition-all duration-1000"
+                      style={{ height: `${wk.val}%` }}
+                    />
+                    <span className="text-[10px] font-bold text-text-muted">{wk.label}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex justify-between text-[10px] text-text-muted font-medium">
+                <span>Low Activity</span>
+                <span>Productive Family!</span>
+              </div>
+            </section>
+          </div>
+
           <section className="card-cozy p-6">
-            <h2 className="heading-handwritten text-2xl text-brown mb-4">Badges Earned</h2>
+            <h2 className="heading-handwritten text-2xl text-brown mb-4">Recent Badges</h2>
             {(badges ?? []).length === 0 ? (
-              <p className="text-text-secondary">No badges earned yet.</p>
+              <p className="text-text-secondary italic">No personal badges earned yet.</p>
             ) : (
               <div className="space-y-3">
                 {(badges ?? []).map((b) => (
-                  <div key={b.id} className="bg-cream-dark border border-beige rounded-xl px-4 py-3">
-                    <div className="font-medium text-text-primary">{b.title}</div>
-                    <div className="text-xs text-text-muted mt-1">
-                      {byUser.get(b.user_id) ?? "Child"} • {new Date(b.earned_at).toLocaleString("ru-RU")}
+                  <div key={b.id} className="bg-cream-dark border border-beige rounded-xl px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">⭐</span>
+                      <div>
+                        <div className="font-medium text-text-primary">{b.title}</div>
+                        <div className="text-[10px] text-text-muted">
+                          {byUser.get(b.user_id) ?? "Child"} • {new Date(b.earned_at).toLocaleDateString("ru-RU")}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}

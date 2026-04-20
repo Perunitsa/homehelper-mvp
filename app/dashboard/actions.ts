@@ -62,5 +62,5 @@ export async function quickAddProductAction(formData: FormData) {
     redirect(`/dashboard?error=${encodeURIComponent(error.message)}`);
   }
 
-  redirect("/inventory");
+  redirect("/dashboard?message=Product+added");
 }
