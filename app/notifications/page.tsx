@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import BottomNav from "@/app/_components/BottomNav";
 import { createClient } from "@/lib/supabase/server";
 import { markAllReadAction, markReadAction } from "./actions";
+import { ensureExpiryNotifications } from "@/lib/ensureExpiryNotifications";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,28 @@ export default async function NotificationsPage() {
     redirect("/auth");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("family_id, expiry_notify_days")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profile?.family_id) {
+    const { data: products } = await supabase
+      .from("products")
+      .select("id, name, expiry_date")
+      .eq("family_id", profile.family_id);
+
+    if (products) {
+      await ensureExpiryNotifications({
+        supabase,
+        userId: user.id,
+        notifyDays: profile.expiry_notify_days ?? 3,
+        products,
+      });
+    }
+  }
+
   const { data: notifications } = await supabase
     .from("notifications")
     .select("id, type, title, message, is_read, created_at")
@@ -51,7 +74,7 @@ export default async function NotificationsPage() {
             href="/dashboard"
             className="btn-cozy btn-cozy-secondary text-sm px-4 py-2 self-center"
           >
-            ← Home
+            ← Главная
           </a>
         </div>
       </header>
@@ -62,11 +85,13 @@ export default async function NotificationsPage() {
             <h2 className="heading-handwritten text-2xl text-brown">
               Список
             </h2>
-            <form action={markAllReadAction}>
-              <button className="btn-cozy btn-cozy-secondary text-sm px-4 py-2">
-                Отметить все прочитанными
-              </button>
-            </form>
+            {(notifications ?? []).some(n => !n.is_read) && (
+              <form action={markAllReadAction}>
+                <button className="btn-cozy btn-cozy-secondary text-sm px-4 py-2">
+                  Отметить все прочитанными
+                </button>
+              </form>
+            )}
           </div>
 
           {(notifications ?? []).length === 0 ? (
@@ -79,26 +104,30 @@ export default async function NotificationsPage() {
                 <div
                   key={n.id}
                   className={[
-                    "card-cozy p-5",
-                    n.is_read ? "opacity-80" : "border-l-4 border-gold-soft",
+                    "card-cozy p-5 transition-all duration-300",
+                    n.is_read ? "opacity-60" : "border-l-4 border-gold-soft shadow-md shadow-gold-soft/5",
                   ].join(" ")}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <div className="text-xs text-text-muted">
-                        {formatDate(n.created_at)} • {n.type}
+                      <div className="text-[10px] uppercase tracking-wider font-bold text-text-muted mb-1 flex items-center gap-2">
+                        <span>{formatDate(n.created_at)}</span>
+                        <span className="w-1 h-1 bg-beige-dark rounded-full"></span>
+                        <span className={n.type === 'expiry' ? 'text-rose-muted' : 'text-olive'}>
+                          {n.type === 'expiry' ? 'Срок годности' : n.type === 'task' ? 'Задание' : 'Система'}
+                        </span>
                       </div>
-                      <div className="text-text-primary font-medium mt-1">
+                      <div className="text-text-primary font-bold text-lg">
                         {n.title}
                       </div>
-                      <div className="text-text-secondary text-sm mt-1">
+                      <div className="text-text-secondary text-sm mt-1 leading-relaxed">
                         {n.message}
                       </div>
                     </div>
                     {!n.is_read && (
                       <form action={markReadAction}>
                         <input type="hidden" name="id" value={n.id} />
-                        <button className="btn-cozy text-xs px-3 py-2">
+                        <button className="btn-cozy text-xs px-4 py-2 whitespace-nowrap">
                           Прочитано
                         </button>
                       </form>

@@ -47,7 +47,7 @@ export default async function ProfilePage({
         <div className="max-w-5xl mx-auto flex items-start justify-between gap-6">
           <div>
             <h1 className="heading-handwritten text-4xl sm:text-5xl text-brown">
-              Profile
+              Профиль
             </h1>
             <p className="text-text-secondary mt-1">Ваши настройки и семья</p>
           </div>
@@ -55,7 +55,7 @@ export default async function ProfilePage({
             href="/dashboard"
             className="btn-cozy btn-cozy-secondary text-sm px-4 py-2 self-center"
           >
-            ← Home
+            ← Главная
           </a>
         </div>
       </header>
@@ -94,7 +94,7 @@ export default async function ProfilePage({
               <div>
                 <div className="text-xs text-text-muted mb-1">Прогресс</div>
                 <div className="text-text-primary font-medium">
-                  Level {profile.level} • {profile.current_xp} XP
+                  Уровень {profile.level} • {profile.current_xp} XP
                 </div>
               </div>
             </div>

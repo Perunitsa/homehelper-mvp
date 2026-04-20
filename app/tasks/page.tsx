@@ -82,7 +82,7 @@ export default async function TasksPage({
         <div className="max-w-5xl mx-auto flex items-start justify-between gap-6">
           <div>
             <h1 className="heading-handwritten text-4xl sm:text-5xl text-brown">
-              Quest Board
+              Доска квестов
             </h1>
             <p className="text-text-secondary mt-1">
               {profile.role === "parent"
@@ -94,7 +94,7 @@ export default async function TasksPage({
             href="/dashboard"
             className="btn-cozy btn-cozy-secondary text-sm px-4 py-2 self-center"
           >
-            ← Home
+            ← Главная
           </a>
         </div>
       </header>
@@ -179,11 +179,11 @@ export default async function TasksPage({
                     Иконка
                   </label>
                   <select name="icon" className="input-cozy" defaultValue="quest">
-                    <option value="quest">Quest</option>
-                    <option value="broom">Broom</option>
-                    <option value="chef-hat">Chef</option>
-                    <option value="shopping-cart">Cart</option>
-                    <option value="sparkles">Sparkles</option>
+                    <option value="quest">Квест</option>
+                    <option value="broom">Уборка</option>
+                    <option value="chef-hat">Кухня</option>
+                    <option value="shopping-cart">Покупки</option>
+                    <option value="sparkles">Особое</option>
                   </select>
                 </div>
 
@@ -283,7 +283,7 @@ export default async function TasksPage({
                               </div>
                             ) : t.photo_proof_url ? (
                               <div className="text-xs text-text-muted italic">
-                                Proof uploaded, but failed to load image.
+                                Фото загружено, но не удалось отобразить.
                               </div>
                             ) : null}
                             <form action={approveTaskAction}>

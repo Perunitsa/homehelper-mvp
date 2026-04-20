@@ -13,17 +13,17 @@ export default async function InventoryPage() {
         <div className="max-w-5xl mx-auto flex items-start justify-between gap-6">
           <div>
             <h1 className="heading-handwritten text-4xl sm:text-5xl text-brown">
-              Inventory
+              Инвентарь
             </h1>
             <p className="text-text-secondary mt-1">
-              Products, expiry tracking, and realtime shopping list
+              Продукты, сроки годности и список покупок
             </p>
           </div>
           <a
             href="/dashboard"
             className="btn-cozy btn-cozy-secondary text-sm px-4 py-2 self-center"
           >
-            ← Home
+            ← Главная
           </a>
         </div>
       </header>

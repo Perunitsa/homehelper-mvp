@@ -285,18 +285,18 @@ export default function InventoryClient({ familyId, role }: InventoryClientProps
         <div className="flex items-center justify-between gap-3 mb-4">
           <h2 className="heading-handwritten text-2xl text-brown flex items-center gap-2">
             <Package className="w-5 h-5" />
-            Inventory
+            Инвентарь
           </h2>
-          <span className="text-xs text-text-muted">Expiring soon: {expiringCount}</span>
+          <span className="text-xs text-text-muted">Скоро истекают: {expiringCount}</span>
         </div>
 
         <div className="space-y-3">
           {filteredProducts.length === 0 ? (
-            <p className="text-text-secondary">No products yet.</p>
+            <p className="text-text-secondary">Продуктов пока нет.</p>
           ) : (
             filteredProducts.map((p) => {
               const d = daysUntil(p.expiry_date);
-              const status = d < 0 ? "Expired" : d <= 3 ? "Expiring" : "Fresh";
+              const status = d < 0 ? "Просрочено" : d <= 3 ? "Истекает" : "Свежее";
               return (
                 <div
                   key={p.id}
@@ -305,12 +305,18 @@ export default function InventoryClient({ familyId, role }: InventoryClientProps
                   <div>
                     <div className="font-medium text-text-primary">{p.name}</div>
                     <div className="text-xs text-text-muted">
-                      {p.expiry_date} • {p.quantity ?? 0} {p.unit ?? "pcs"}
+                      До {p.expiry_date} • {p.quantity ?? 0} {p.unit ?? "шт"}
                       {p.category ? ` • ${p.category}` : ""}
                       {p.barcode ? ` • #${p.barcode}` : ""}
                     </div>
                   </div>
-                  <span className="text-xs font-semibold text-text-secondary">{status}</span>
+                  <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${
+                    status === 'Просрочено' ? 'bg-rose-muted/20 text-rose-muted' :
+                    status === 'Истекает' ? 'bg-gold-soft/20 text-gold-soft' :
+                    'bg-olive/20 text-olive'
+                  }`}>
+                    {status}
+                  </span>
                 </div>
               );
             })
@@ -326,22 +332,22 @@ export default function InventoryClient({ familyId, role }: InventoryClientProps
               e.currentTarget.reset();
             }}
           >
-            <input name="name" className="input-cozy sm:col-span-2" placeholder="Milk" required />
+            <input name="name" className="input-cozy sm:col-span-2" placeholder="Молоко" required />
             <div className="relative">
               <Barcode className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-              <input name="barcode" className="input-cozy pl-9" placeholder="Barcode (MVP input)" />
+              <input name="barcode" className="input-cozy pl-9" placeholder="Штрих-код (MVP)" />
             </div>
             <input name="expiryDate" type="date" className="input-cozy" required />
-            <input name="category" className="input-cozy" placeholder="Category" />
+            <input name="category" className="input-cozy" placeholder="Категория" />
             <input name="quantity" type="number" min={0} className="input-cozy" defaultValue={1} />
             <select name="unit" className="input-cozy" defaultValue="pcs">
-              <option value="pcs">pcs</option>
-              <option value="kg">kg</option>
-              <option value="l">l</option>
+              <option value="pcs">шт</option>
+              <option value="kg">кг</option>
+              <option value="l">л</option>
             </select>
             <button className="btn-cozy sm:col-span-2" type="submit" disabled={addProductMutation.isPending}>
               <Plus className="w-4 h-4 inline mr-2" />
-              Add product
+              Добавить продукт
             </button>
           </form>
         )}
@@ -351,14 +357,14 @@ export default function InventoryClient({ familyId, role }: InventoryClientProps
         <div className="flex items-center justify-between gap-3 mb-4">
           <h2 className="heading-handwritten text-2xl text-brown flex items-center gap-2">
             <ListTodo className="w-5 h-5" />
-            Shopping List
+            Список покупок
           </h2>
-          <span className="text-xs text-text-muted">{items.length} items</span>
+          <span className="text-xs text-text-muted">{items.length} поз.</span>
         </div>
 
         {!listId ? (
           <div className="space-y-3">
-            <p className="text-text-secondary">No shopping list yet.</p>
+            <p className="text-text-secondary">Списка пока нет.</p>
             {role === "parent" && (
               <button
                 className="btn-cozy"
@@ -366,7 +372,7 @@ export default function InventoryClient({ familyId, role }: InventoryClientProps
                 onClick={() => createListMutation.mutate()}
                 disabled={createListMutation.isPending}
               >
-                Create shared list
+                Создать общий список
               </button>
             )}
           </div>
@@ -375,7 +381,7 @@ export default function InventoryClient({ familyId, role }: InventoryClientProps
             <div className="space-y-4">
               {Object.entries(groupedItems).map(([category, group]) => (
                 <div key={category} className="space-y-2">
-                  <div className="text-xs text-text-muted px-1">{category}</div>
+                  <div className="text-xs text-text-muted px-1">{category === 'Uncategorized' ? 'Без категории' : category}</div>
                   {group.map((item) => (
                     <button
                       key={item.id}
@@ -398,7 +404,7 @@ export default function InventoryClient({ familyId, role }: InventoryClientProps
                           {item.product_name}
                         </div>
                         <div className="text-xs text-text-muted">
-                          {item.quantity ?? 1} {item.unit ?? "pcs"}
+                          {item.quantity ?? 1} {item.unit === 'pcs' ? 'шт' : item.unit === 'kg' ? 'кг' : 'л'}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -419,12 +425,12 @@ export default function InventoryClient({ familyId, role }: InventoryClientProps
                               addProductMutation.mutate(fd);
                             }}
                           >
-                            + Inventory
+                            + Инвентарь
                           </button>
                         )}
                         <span className="inline-flex items-center text-xs text-text-secondary">
                           <Check className="w-4 h-4 mr-1" />
-                          {item.is_purchased ? "Done" : "Mark done"}
+                          {item.is_purchased ? "Готово" : "Куплено"}
                         </span>
                       </div>
                     </button>
@@ -445,18 +451,18 @@ export default function InventoryClient({ familyId, role }: InventoryClientProps
               <input
                 name="productName"
                 className="input-cozy sm:col-span-2"
-                placeholder="Add item..."
+                placeholder="Что купить?"
                 required
               />
-              <input name="category" className="input-cozy" placeholder="Category" />
+              <input name="category" className="input-cozy" placeholder="Категория" />
               <input name="quantity" type="number" min={1} className="input-cozy" defaultValue={1} />
               <select name="unit" className="input-cozy" defaultValue="pcs">
-                <option value="pcs">pcs</option>
-                <option value="kg">kg</option>
-                <option value="l">l</option>
+                <option value="pcs">шт</option>
+                <option value="kg">кг</option>
+                <option value="l">л</option>
               </select>
               <button className="btn-cozy sm:col-span-5" type="submit" disabled={addShoppingItemMutation.isPending}>
-                Add to list
+                В список
               </button>
             </form>
           </>

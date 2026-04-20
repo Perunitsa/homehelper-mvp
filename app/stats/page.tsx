@@ -34,7 +34,7 @@ export default async function StatsPage() {
       };
 
   const byUser = new Map(
-    (leaderboard ?? []).map((u) => [u.id, u.first_name || "Unknown"] as const),
+    (leaderboard ?? []).map((u) => [u.id, u.first_name || "Неизвестно"] as const),
   );
 
   return (
@@ -42,11 +42,11 @@ export default async function StatsPage() {
       <header className="watercolor-gradient px-6 py-8 sm:px-12 relative overflow-hidden">
         <div className="max-w-5xl mx-auto flex items-start justify-between gap-6">
           <div>
-            <h1 className="heading-handwritten text-4xl sm:text-5xl text-brown">Stats</h1>
-            <p className="text-text-secondary mt-1">Family leaderboard and earned badges for kids</p>
+            <h1 className="heading-handwritten text-4xl sm:text-5xl text-brown">Статистика</h1>
+            <p className="text-text-secondary mt-1">Семейный лидерборд и награды для детей</p>
           </div>
           <a href="/dashboard" className="btn-cozy btn-cozy-secondary text-sm px-4 py-2 self-center">
-            ← Home
+            ← Главная
           </a>
         </div>
       </header>
@@ -54,9 +54,9 @@ export default async function StatsPage() {
       <main className="flex-1 px-6 py-8 sm:px-12">
         <div className="max-w-5xl mx-auto space-y-8">
           <section className="card-cozy p-6">
-            <h2 className="heading-handwritten text-3xl text-brown mb-6">Family Leaderboard</h2>
+            <h2 className="heading-handwritten text-3xl text-brown mb-6">Лидерборд семьи</h2>
             {(leaderboard ?? []).length === 0 ? (
-              <p className="text-text-secondary italic">No activity data yet.</p>
+              <p className="text-text-secondary italic">Данных пока нет.</p>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {(leaderboard ?? []).map((u, idx) => (
@@ -71,13 +71,13 @@ export default async function StatsPage() {
                         {idx + 1}
                       </div>
                       <div>
-                        <div className="font-bold text-text-primary">{u.first_name || "User"}</div>
-                        <div className="text-[10px] uppercase tracking-wider text-text-muted">{u.role}</div>
+                        <div className="font-bold text-text-primary">{u.first_name || "Пользователь"}</div>
+                        <div className="text-[10px] uppercase tracking-wider text-text-muted">{u.role === 'parent' ? 'Родитель' : 'Ребёнок'}</div>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-bold text-brown">{u.current_xp ?? 0}</div>
-                      <div className="text-[10px] text-text-muted uppercase">Total XP</div>
+                      <div className="text-[10px] text-text-muted uppercase">Всего XP</div>
                     </div>
                   </div>
                 ))}
@@ -87,15 +87,15 @@ export default async function StatsPage() {
 
           <div className="grid gap-8 lg:grid-cols-2">
             <section className="card-cozy p-6">
-              <h2 className="heading-handwritten text-3xl text-brown mb-6">Family Achievements</h2>
+              <h2 className="heading-handwritten text-3xl text-brown mb-6">Достижения семьи</h2>
               <div className="grid grid-cols-3 gap-4">
                 {[
-                  { title: "Clean Master", icon: "🧹", earned: true },
-                  { title: "Chef Helper", icon: "🍳", earned: true },
-                  { title: "Exp Hero", icon: "✨", earned: false },
-                  { title: "Shopping Pro", icon: "🛒", earned: false },
-                  { title: "Stock Keeper", icon: "📦", earned: false },
-                  { title: "Speedy", icon: "⚡", earned: false },
+                  { title: "Мастер чистоты", icon: "🧹", earned: true },
+                  { title: "Шеф-повар", icon: "🍳", earned: true },
+                  { title: "Герой опыта", icon: "✨", earned: false },
+                  { title: "Про-покупатель", icon: "🛒", earned: false },
+                  { title: "Хранитель запасов", icon: "📦", earned: false },
+                  { title: "Скороход", icon: "⚡", earned: false },
                 ].map((a, i) => (
                   <div 
                     key={i} 
@@ -108,17 +108,17 @@ export default async function StatsPage() {
                   </div>
                 ))}
               </div>
-              <p className="text-[10px] text-text-muted mt-6 text-center italic">Complete more quests to unlock family-wide badges!</p>
+              <p className="text-[10px] text-text-muted mt-6 text-center italic">Выполняйте больше квестов, чтобы разблокировать семейные бейджи!</p>
             </section>
 
             <section className="card-cozy p-6">
-              <h2 className="heading-handwritten text-3xl text-brown mb-6">Weekly Activity</h2>
+              <h2 className="heading-handwritten text-3xl text-brown mb-6">Активность за неделю</h2>
               <div className="h-48 flex items-end justify-around gap-2 px-2 pb-6 border-b border-beige">
                 {[
-                  { label: "WK1", val: 40 },
-                  { label: "WK2", val: 75 },
-                  { label: "WK3", val: 55 },
-                  { label: "WK4", val: 95 },
+                  { label: "НЕД 1", val: 40 },
+                  { label: "НЕД 2", val: 75 },
+                  { label: "НЕД 3", val: 55 },
+                  { label: "НЕД 4", val: 95 },
                 ].map((wk) => (
                   <div key={wk.label} className="flex-1 flex flex-col items-center gap-2">
                     <div 
@@ -130,16 +130,16 @@ export default async function StatsPage() {
                 ))}
               </div>
               <div className="mt-4 flex justify-between text-[10px] text-text-muted font-medium">
-                <span>Low Activity</span>
-                <span>Productive Family!</span>
+                <span>Низкая</span>
+                <span>Продуктивная семья!</span>
               </div>
             </section>
           </div>
 
           <section className="card-cozy p-6">
-            <h2 className="heading-handwritten text-2xl text-brown mb-4">Recent Badges</h2>
+            <h2 className="heading-handwritten text-2xl text-brown mb-4">Последние бейджи</h2>
             {(badges ?? []).length === 0 ? (
-              <p className="text-text-secondary italic">No personal badges earned yet.</p>
+              <p className="text-text-secondary italic">Личных бейджей пока нет.</p>
             ) : (
               <div className="space-y-3">
                 {(badges ?? []).map((b) => (
@@ -149,7 +149,7 @@ export default async function StatsPage() {
                       <div>
                         <div className="font-medium text-text-primary">{b.title}</div>
                         <div className="text-[10px] text-text-muted">
-                          {byUser.get(b.user_id) ?? "Child"} • {new Date(b.earned_at).toLocaleDateString("ru-RU")}
+                          {byUser.get(b.user_id) ?? "Ребёнок"} • {new Date(b.earned_at).toLocaleDateString("ru-RU")}
                         </div>
                       </div>
                     </div>
@@ -160,6 +160,7 @@ export default async function StatsPage() {
           </section>
         </div>
       </main>
+
 
       <BottomNav />
     </div>
