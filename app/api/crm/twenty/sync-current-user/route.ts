@@ -34,7 +34,7 @@ export async function POST() {
 
   const result = await syncHomeHelperProfileToTwenty({
     userId: profile.id,
-    email: profile.email,
+    email: profile.email ?? user.email ?? "",
     firstName: profile.first_name,
     lastName: profile.last_name,
     role: profile.role === "child" ? "child" : "parent",

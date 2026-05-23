@@ -9,11 +9,16 @@ const envSchema = z.object({
   TWENTY_PERSON_OBJECT: z.string().min(1).default("people"),
   TWENTY_FIELD_HOMEHELPER_USER_ID: z.string().min(1).default("homehelperUserId"),
   TWENTY_FIELD_HOMEHELPER_ROLE: z.string().min(1).default("homehelperRole"),
-  TWENTY_FIELD_FAMILY_ID: z.string().min(1).default("homehelperFamilyId"),
-  TWENTY_FIELD_FAMILY_NAME: z.string().min(1).default("homehelperFamilyName"),
-  TWENTY_FIELD_XP_LEVEL: z.string().min(1).default("homehelperLevel"),
-  TWENTY_FIELD_XP_POINTS: z.string().min(1).default("homehelperXp"),
-  TWENTY_FIELD_ONBOARDING_STATUS: z.string().min(1).default("homehelperOnboardingStatus"),
+  TWENTY_FIELD_FAMILY_ID: z.string().min(1).default("familyId"),
+  TWENTY_FIELD_FAMILY_NAME: z.string().min(1).default("familyName"),
+  TWENTY_FIELD_XP_LEVEL: z.string().min(1).default("level"),
+  TWENTY_FIELD_XP_POINTS: z.string().min(1).default("xpPoints"),
+  TWENTY_FIELD_ONBOARDING_STATUS: z.string().min(1).default("onboardingStatus"),
+  /** Set false if Emails is deactivated in Twenty Data Model */
+  TWENTY_SEND_EMAILS: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((v) => v === "true"),
 });
 
 let cachedEnv: z.infer<typeof envSchema> | null = null;
@@ -37,6 +42,7 @@ export function getEnv() {
     TWENTY_FIELD_XP_LEVEL: process.env.TWENTY_FIELD_XP_LEVEL,
     TWENTY_FIELD_XP_POINTS: process.env.TWENTY_FIELD_XP_POINTS,
     TWENTY_FIELD_ONBOARDING_STATUS: process.env.TWENTY_FIELD_ONBOARDING_STATUS,
+    TWENTY_SEND_EMAILS: process.env.TWENTY_SEND_EMAILS,
   });
 
   return cachedEnv;

@@ -1,22 +1,47 @@
 import { getEnv } from "@/lib/env";
 
+type HomeHelperRole = "parent" | "child";
+type HomeHelperOnboardingStatus =
+  | "created_family"
+  | "joined_family"
+  | "manual_sync";
+
 type HomeHelperCrmProfile = {
   userId: string;
   email: string;
   firstName: string;
   lastName?: string | null;
-  role: "parent" | "child";
+  role: HomeHelperRole;
   familyId: string;
   familyName?: string | null;
   level?: number | null;
   currentXp?: number | null;
-  onboardingStatus?: "created_family" | "joined_family" | "manual_sync";
+  onboardingStatus?: HomeHelperOnboardingStatus;
 };
 
 type TwentySyncResult =
   | { skipped: true; reason: "missing_api_key" }
   | { skipped: false; ok: true; status: number; data: unknown }
-  | { skipped: false; ok: false; status: number; error: string; data?: unknown };
+  | {
+      skipped: false;
+      ok: false;
+      status: number;
+      error: string;
+      data?: unknown;
+      payload?: Record<string, unknown>;
+    };
+
+/** Twenty SELECT enums from workspace OpenAPI schema */
+const TWENTY_ROLE: Record<HomeHelperRole, string> = {
+  parent: "PARENT",
+  child: "CHILD",
+};
+
+const TWENTY_ONBOARDING: Record<HomeHelperOnboardingStatus, string> = {
+  created_family: "CREATED_FAMILY",
+  joined_family: "JOINED_FAMILY",
+  manual_sync: "MANUAL_SYNC",
+};
 
 function normalizeBaseUrl(url: string) {
   return url.replace(/\/+$/, "");
@@ -39,14 +64,21 @@ function buildTwentyPersonPayload(profile: HomeHelperCrmProfile) {
       firstName: profile.firstName,
       lastName: profile.lastName ?? "",
     },
-    emails: {
-      primaryEmail: profile.email,
-      additionalEmails: [],
-    },
   };
 
+  if (env.TWENTY_SEND_EMAILS && profile.email) {
+    payload.emails = {
+      primaryEmail: profile.email,
+      additionalEmails: [],
+    };
+  }
+
   addCustomField(payload, env.TWENTY_FIELD_HOMEHELPER_USER_ID, profile.userId);
-  addCustomField(payload, env.TWENTY_FIELD_HOMEHELPER_ROLE, profile.role);
+  addCustomField(
+    payload,
+    env.TWENTY_FIELD_HOMEHELPER_ROLE,
+    TWENTY_ROLE[profile.role],
+  );
   addCustomField(payload, env.TWENTY_FIELD_FAMILY_ID, profile.familyId);
   addCustomField(payload, env.TWENTY_FIELD_FAMILY_NAME, profile.familyName);
   addCustomField(payload, env.TWENTY_FIELD_XP_LEVEL, profile.level ?? 1);
@@ -54,7 +86,7 @@ function buildTwentyPersonPayload(profile: HomeHelperCrmProfile) {
   addCustomField(
     payload,
     env.TWENTY_FIELD_ONBOARDING_STATUS,
-    profile.onboardingStatus ?? "manual_sync",
+    TWENTY_ONBOARDING[profile.onboardingStatus ?? "manual_sync"],
   );
 
   return payload;
@@ -69,6 +101,7 @@ export async function syncHomeHelperProfileToTwenty(
     return { skipped: true, reason: "missing_api_key" };
   }
 
+  const payload = buildTwentyPersonPayload(profile);
   const baseUrl = normalizeBaseUrl(env.TWENTY_API_URL);
   const objectName = env.TWENTY_PERSON_OBJECT.replace(/^\/+|\/+$/g, "");
   const response = await fetch(`${baseUrl}/rest/${objectName}`, {
@@ -77,7 +110,7 @@ export async function syncHomeHelperProfileToTwenty(
       Authorization: `Bearer ${env.TWENTY_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(buildTwentyPersonPayload(profile)),
+    body: JSON.stringify(payload),
   });
 
   const text = await response.text();
@@ -88,12 +121,38 @@ export async function syncHomeHelperProfileToTwenty(
       skipped: false,
       ok: false,
       status: response.status,
-      error: response.statusText || "Twenty CRM request failed",
+      error: extractTwentyErrorMessage(data) || response.statusText || "Twenty CRM request failed",
       data,
+      payload,
     };
   }
 
   return { skipped: false, ok: true, status: response.status, data };
+}
+
+function extractTwentyErrorMessage(data: unknown): string | undefined {
+  if (!data || typeof data !== "object") {
+    return undefined;
+  }
+
+  const record = data as Record<string, unknown>;
+  if (typeof record.message === "string") {
+    return record.message;
+  }
+  if (Array.isArray(record.messages) && typeof record.messages[0] === "string") {
+    return record.messages[0];
+  }
+  if (Array.isArray(record.errors) && record.errors[0]) {
+    const first = record.errors[0];
+    if (typeof first === "string") {
+      return first;
+    }
+    if (typeof first === "object" && first && "message" in first) {
+      return String((first as { message: unknown }).message);
+    }
+  }
+
+  return undefined;
 }
 
 function safeJsonParse(value: string) {
