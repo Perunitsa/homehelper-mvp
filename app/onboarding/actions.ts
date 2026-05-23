@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { syncHomeHelperProfileToTwenty } from "@/lib/twenty";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 function getString(formData: FormData, key: string) {
@@ -19,6 +20,35 @@ async function getUser() {
   }
 
   return { supabase, user };
+}
+
+async function syncOnboardingProfileToCrm(params: {
+  user: User;
+  firstName: string;
+  role: "parent" | "child";
+  familyId: string;
+  familyName: string;
+  onboardingStatus: "created_family" | "joined_family";
+}) {
+  try {
+    const result = await syncHomeHelperProfileToTwenty({
+      userId: params.user.id,
+      email: params.user.email ?? "",
+      firstName: params.firstName,
+      role: params.role,
+      familyId: params.familyId,
+      familyName: params.familyName,
+      level: 1,
+      currentXp: 0,
+      onboardingStatus: params.onboardingStatus,
+    });
+
+    if (!result.skipped && !result.ok) {
+      console.warn("Twenty CRM sync failed:", result);
+    }
+  } catch (error) {
+    console.warn("Twenty CRM sync threw an error:", error);
+  }
 }
 
 async function createFamilyWithName(params: {
@@ -93,6 +123,15 @@ async function createFamilyWithName(params: {
     console.warn("createFamilyWithName — shopping_lists insert:", listError);
   }
 
+  await syncOnboardingProfileToCrm({
+    user,
+    firstName,
+    role: "parent",
+    familyId: family.id,
+    familyName,
+    onboardingStatus: "created_family",
+  });
+
   return { inviteCode: family.invite_code };
 }
 
@@ -153,7 +192,7 @@ export async function joinFamilyAction(formData: FormData) {
 
   const { data: family, error: familyError } = await supabase
     .from("families")
-    .select("id")
+    .select("id, name")
     .eq("invite_code", inviteCode.toLowerCase())
     .maybeSingle();
 
@@ -195,6 +234,15 @@ export async function joinFamilyAction(formData: FormData) {
       return { error: `Не удалось присоединиться: ${updateError.message}` };
     }
   }
+
+  await syncOnboardingProfileToCrm({
+    user,
+    firstName,
+    role,
+    familyId: family.id,
+    familyName: family.name,
+    onboardingStatus: "joined_family",
+  });
 
   return { success: true };
 }
