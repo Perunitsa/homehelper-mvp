@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPyrusTaskReview } from "@/lib/pyrus";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
@@ -64,7 +65,8 @@ export async function POST(request: NextRequest) {
 
   let proofUrl = task.photo_proof_url;
   if (task.photo_proof_url) {
-    const { data } = await supabase.storage
+    const adminSupabase = createAdminClient();
+    const { data } = await adminSupabase.storage
       .from("task-proofs")
       .createSignedUrl(task.photo_proof_url, 60 * 60 * 24 * 7);
     proofUrl = data?.signedUrl ?? task.photo_proof_url;

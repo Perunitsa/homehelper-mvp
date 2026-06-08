@@ -1,5 +1,6 @@
 import { requireProfile } from "@/app/_components/requireProfile";
 import BottomNav from "@/app/_components/BottomNav";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   approveTaskAction,
   createTaskAction,
@@ -63,10 +64,11 @@ export default async function TasksPage({
       ? tasks ?? []
       : (tasks ?? []).filter((t) => t.assigned_to === profile.id);
 
+  const adminSupabase = profile.role === "parent" ? createAdminClient() : null;
   const visibleTasks = await Promise.all(
     visibleTasksRaw.map(async (t) => {
-      if (t.photo_proof_url && profile.role === "parent" && t.status === "in_review") {
-        const { data } = await supabase.storage
+      if (t.photo_proof_url && adminSupabase && t.status === "in_review") {
+        const { data } = await adminSupabase.storage
           .from("task-proofs")
           .createSignedUrl(t.photo_proof_url, 3600);
         return { ...t, signed_proof_url: data?.signedUrl };

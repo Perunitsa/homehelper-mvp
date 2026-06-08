@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createPyrusTaskReview } from "@/lib/pyrus";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 function getString(formData: FormData, key: string) {
@@ -98,7 +99,8 @@ export async function submitTaskAction(formData: FormData) {
 
   const safeName = file.name.replace(/[^\w.\-]+/g, "_") || "proof.jpg";
   const objectPath = `${taskId}/${Date.now()}-${safeName}`;
-  const { error: uploadError } = await supabase.storage
+  const adminSupabase = createAdminClient();
+  const { error: uploadError } = await adminSupabase.storage
     .from("task-proofs")
     .upload(objectPath, file, {
       contentType: file.type,
@@ -151,7 +153,7 @@ export async function submitTaskAction(formData: FormData) {
 
     let proofUrl = task.photo_proof_url;
     if (task.photo_proof_url) {
-      const { data } = await supabase.storage
+      const { data } = await adminSupabase.storage
         .from("task-proofs")
         .createSignedUrl(task.photo_proof_url, 60 * 60 * 24 * 7);
       proofUrl = data?.signedUrl ?? task.photo_proof_url;
