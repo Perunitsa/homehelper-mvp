@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { syncHomeHelperProfileToTwenty } from "@/lib/twenty";
+import { syncHomeHelperProfileToHubSpot } from "@/lib/hubspot";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 function getString(formData: FormData, key: string) {
@@ -31,7 +31,7 @@ async function syncOnboardingProfileToCrm(params: {
   onboardingStatus: "created_family" | "joined_family";
 }) {
   try {
-    const result = await syncHomeHelperProfileToTwenty({
+    const result = await syncHomeHelperProfileToHubSpot({
       userId: params.user.id,
       email: params.user.email ?? "",
       firstName: params.firstName,
@@ -44,10 +44,10 @@ async function syncOnboardingProfileToCrm(params: {
     });
 
     if (!result.skipped && !result.ok) {
-      console.warn("Twenty CRM sync failed:", result);
+      console.warn("HubSpot CRM sync failed:", result);
     }
   } catch (error) {
-    console.warn("Twenty CRM sync threw an error:", error);
+    console.warn("HubSpot CRM sync threw an error:", error);
   }
 }
 
