@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPyrusTaskReview } from "@/lib/pyrus";
+import {
+  createPyrusTaskReview,
+  getPyrusTaskId,
+  updatePyrusTaskReview,
+  type HomeHelperBpmsTask,
+} from "@/lib/pyrus";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -32,7 +37,7 @@ export async function POST(request: NextRequest) {
 
   const { data: task, error: taskError } = await supabase
     .from("tasks")
-    .select("id, title, description, status, points, deadline, family_id, assigned_to, created_by, photo_proof_url")
+    .select("id, title, description, status, points, deadline, family_id, assigned_to, created_by, photo_proof_url, pyrus_task_id")
     .eq("id", taskId)
     .eq("family_id", profile.family_id)
     .maybeSingle();
@@ -72,13 +77,20 @@ export async function POST(request: NextRequest) {
     proofUrl = data?.signedUrl ?? task.photo_proof_url;
   }
 
-  const result = await createPyrusTaskReview({
+  const bpmsStatus: HomeHelperBpmsTask["status"] =
+    task.status === "completed" || task.status === "approved"
+      ? "approved"
+      : task.status === "rejected" || task.status === "needs_fix"
+        ? "needs_fix"
+        : task.status === "in_review"
+          ? "in_review"
+          : "pending";
+
+  const payload: HomeHelperBpmsTask = {
     taskId: task.id,
     title: task.title,
     description: task.description,
-    status: task.status === "completed" || task.status === "rejected"
-      ? task.status
-      : "in_review",
+    status: bpmsStatus,
     points: task.points,
     deadline: task.deadline,
     familyId: task.family_id,
@@ -90,7 +102,20 @@ export async function POST(request: NextRequest) {
     parentName: parent?.first_name,
     parentEmail: parent?.email,
     proofUrl,
-  });
+  };
+
+  const result = task.pyrus_task_id
+    ? await updatePyrusTaskReview(task.pyrus_task_id, payload)
+    : await createPyrusTaskReview(payload);
+
+  const pyrusTaskId = getPyrusTaskId(result);
+  if (pyrusTaskId && !task.pyrus_task_id) {
+    const adminSupabase = createAdminClient();
+    await adminSupabase
+      .from("tasks")
+      .update({ pyrus_task_id: pyrusTaskId })
+      .eq("id", task.id);
+  }
 
   if ("skipped" in result && result.skipped) {
     return NextResponse.json(result, { status: 200 });

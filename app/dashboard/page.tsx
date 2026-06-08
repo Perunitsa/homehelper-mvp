@@ -50,7 +50,7 @@ export default async function DashboardPage({
     .select("id, title, points, status")
     .eq("family_id", profile.family_id)
     .eq("assigned_to", user.id)
-    .in("status", ["pending", "in_review"])
+    .in("status", ["pending", "in_review", "needs_fix"])
     .order("created_at", { ascending: false })
     .limit(5);
 

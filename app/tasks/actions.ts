@@ -1,7 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createPyrusTaskReview } from "@/lib/pyrus";
+import {
+  createPyrusTaskReview,
+  getPyrusTaskId,
+  updatePyrusTaskReview,
+  type HomeHelperBpmsTask,
+} from "@/lib/pyrus";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -39,6 +44,90 @@ async function getSession() {
   return { supabase, user, profile };
 }
 
+type TaskForPyrus = {
+  id: string;
+  title: string;
+  description?: string | null;
+  status: HomeHelperBpmsTask["status"];
+  points?: number | null;
+  deadline?: string | null;
+  family_id: string;
+  assigned_to: string;
+  created_by: string;
+  photo_proof_url?: string | null;
+  pyrus_task_id?: number | null;
+};
+
+async function syncTaskWithPyrus(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  task: TaskForPyrus,
+  status: HomeHelperBpmsTask["status"],
+  proofUrl?: string | null,
+) {
+  const [{ data: family }, { data: child }, { data: parent }] = await Promise.all([
+    supabase
+      .from("families")
+      .select("id, name")
+      .eq("id", task.family_id)
+      .maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("id, email, first_name")
+      .eq("id", task.assigned_to)
+      .maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("id, email, first_name")
+      .eq("id", task.created_by)
+      .maybeSingle(),
+  ]);
+
+  const payload: HomeHelperBpmsTask = {
+    taskId: task.id,
+    title: task.title,
+    description: task.description,
+    status,
+    points: task.points,
+    deadline: task.deadline,
+    familyId: task.family_id,
+    familyName: family?.name,
+    childId: task.assigned_to,
+    childName: child?.first_name,
+    childEmail: child?.email,
+    parentId: task.created_by,
+    parentName: parent?.first_name,
+    parentEmail: parent?.email,
+    proofUrl,
+  };
+
+  const result = task.pyrus_task_id
+    ? await updatePyrusTaskReview(task.pyrus_task_id, payload)
+    : await createPyrusTaskReview(payload);
+
+  if (result.skipped) {
+    return null;
+  }
+
+  if (!result.ok) {
+    return result.error;
+  }
+
+  const pyrusTaskId = getPyrusTaskId(result);
+  if (pyrusTaskId && !task.pyrus_task_id) {
+    const adminSupabase = createAdminClient();
+    const { error } = await adminSupabase
+      .from("tasks")
+      .update({ pyrus_task_id: pyrusTaskId })
+      .eq("id", task.id);
+
+    if (error) {
+      return error.message;
+    }
+  }
+
+  return null;
+}
+
 export async function createTaskAction(formData: FormData) {
   const title = getString(formData, "title");
   const description = getString(formData, "description");
@@ -55,20 +144,38 @@ export async function createTaskAction(formData: FormData) {
 
   const deadline = deadlineRaw ? new Date(deadlineRaw).toISOString() : null;
 
-  const { error } = await supabase.from("tasks").insert({
-    family_id: profile.family_id,
-    title,
-    description: description || null,
-    assigned_to: assignedTo,
-    created_by: user.id,
-    points,
-    deadline,
-    icon,
-  });
+  const { data: task, error } = await supabase
+    .from("tasks")
+    .insert({
+      family_id: profile.family_id,
+      title,
+      description: description || null,
+      assigned_to: assignedTo,
+      created_by: user.id,
+      points,
+      deadline,
+      icon,
+      status: "pending",
+    })
+    .select("id, title, description, status, points, deadline, family_id, assigned_to, created_by, photo_proof_url, pyrus_task_id")
+    .single();
 
   if (error) {
     console.error("createTaskAction:", error);
     redirect(`/tasks?error=${encodeURIComponent(error.message)}`);
+  }
+
+  if (task) {
+    const pyrusError = await syncTaskWithPyrus(
+      supabase,
+      { ...task, status: "pending" },
+      "pending",
+      null,
+    );
+
+    if (pyrusError) {
+      redirect(`/tasks?error=${encodeURIComponent(`Pyrus: ${pyrusError}`)}`);
+    }
   }
 
   redirect("/tasks");
@@ -128,29 +235,11 @@ export async function submitTaskAction(formData: FormData) {
 
   const { data: task } = await supabase
     .from("tasks")
-    .select("id, title, description, status, points, deadline, family_id, assigned_to, created_by, photo_proof_url")
+    .select("id, title, description, status, points, deadline, family_id, assigned_to, created_by, photo_proof_url, pyrus_task_id")
     .eq("id", taskId)
     .maybeSingle();
 
   if (task) {
-    const [{ data: family }, { data: child }, { data: parent }] = await Promise.all([
-      supabase
-        .from("families")
-        .select("id, name")
-        .eq("id", task.family_id)
-        .maybeSingle(),
-      supabase
-        .from("profiles")
-        .select("id, email, first_name")
-        .eq("id", user.id)
-        .maybeSingle(),
-      supabase
-        .from("profiles")
-        .select("id, email, first_name")
-        .eq("id", task.created_by)
-        .maybeSingle(),
-    ]);
-
     let proofUrl = task.photo_proof_url;
     if (task.photo_proof_url) {
       const { data } = await adminSupabase.storage
@@ -159,30 +248,24 @@ export async function submitTaskAction(formData: FormData) {
       proofUrl = data?.signedUrl ?? task.photo_proof_url;
     }
 
-    try {
-      const result = await createPyrusTaskReview({
-        taskId: task.id,
-        title: task.title,
-        description: task.description,
-        status: "in_review",
-        points: task.points,
-        deadline: task.deadline,
-        familyId: task.family_id,
-        familyName: family?.name,
-        childId: user.id,
-        childName: child?.first_name,
-        childEmail: child?.email ?? user.email,
-        parentId: task.created_by,
-        parentName: parent?.first_name,
-        parentEmail: parent?.email,
-        proofUrl,
-      });
+    let pyrusError: string | null = null;
 
-      if (!result.skipped && !result.ok) {
-        console.warn("Pyrus BPMS sync failed:", result);
-      }
+    try {
+      pyrusError = await syncTaskWithPyrus(
+        supabase,
+        { ...task, status: "in_review" },
+        "in_review",
+        proofUrl,
+      );
     } catch (syncError) {
       console.warn("Pyrus BPMS sync threw an error:", syncError);
+      pyrusError = syncError instanceof Error
+        ? syncError.message
+        : "Pyrus BPMS sync failed";
+    }
+
+    if (pyrusError) {
+      redirect(`/tasks?error=${encodeURIComponent(`Pyrus: ${pyrusError}`)}`);
     }
   }
 
@@ -202,7 +285,7 @@ export async function approveTaskAction(formData: FormData) {
 
   const { data: task, error: taskError } = await supabase
     .from("tasks")
-    .select("id, family_id, status, points, assigned_to")
+    .select("id, title, description, family_id, status, points, deadline, assigned_to, created_by, photo_proof_url, pyrus_task_id")
     .eq("id", taskId)
     .maybeSingle();
 
@@ -223,7 +306,7 @@ export async function approveTaskAction(formData: FormData) {
 
   const { error: updateTaskError } = await supabase
     .from("tasks")
-    .update({ status: "completed", completed_at: completedAt })
+    .update({ status: "approved", completed_at: completedAt })
     .eq("id", taskId);
 
   if (updateTaskError) {
@@ -277,6 +360,26 @@ export async function approveTaskAction(formData: FormData) {
     console.warn("approveTaskAction insert notification:", notifErr);
   }
 
+  let proofUrl = task.photo_proof_url;
+  if (task.photo_proof_url) {
+    const adminSupabase = createAdminClient();
+    const { data } = await adminSupabase.storage
+      .from("task-proofs")
+      .createSignedUrl(task.photo_proof_url, 60 * 60 * 24 * 7);
+    proofUrl = data?.signedUrl ?? task.photo_proof_url;
+  }
+
+  const pyrusError = await syncTaskWithPyrus(
+    supabase,
+    { ...task, status: "approved" },
+    "approved",
+    proofUrl,
+  );
+
+  if (pyrusError) {
+    redirect(`/tasks?error=${encodeURIComponent(`Pyrus: ${pyrusError}`)}`);
+  }
+
   redirect("/tasks");
 }
 
@@ -287,11 +390,33 @@ export async function rejectTaskAction(formData: FormData) {
     redirect("/tasks?error=Не найден ID задачи");
   }
 
-  const { supabase } = await getSession();
+  const { supabase, profile } = await getSession();
+  if (profile.role !== "parent") {
+    redirect("/tasks?error=Access denied");
+  }
+
+  const { data: task, error: taskError } = await supabase
+    .from("tasks")
+    .select("id, title, description, family_id, status, points, deadline, assigned_to, created_by, photo_proof_url, pyrus_task_id")
+    .eq("id", taskId)
+    .maybeSingle();
+
+  if (taskError) {
+    console.error("rejectTaskAction select task:", taskError);
+    redirect(`/tasks?error=${encodeURIComponent(taskError.message)}`);
+  }
+
+  if (!task || task.family_id !== profile.family_id) {
+    redirect("/tasks?error=Task not found");
+  }
+
+  if (task.status !== "in_review") {
+    redirect("/tasks?error=Task is not in review");
+  }
   const { error } = await supabase
     .from("tasks")
     .update({
-      status: "rejected",
+      status: "needs_fix",
       description: reason ? `${reason}` : undefined,
     })
     .eq("id", taskId);
@@ -299,6 +424,30 @@ export async function rejectTaskAction(formData: FormData) {
   if (error) {
     console.error("rejectTaskAction:", error);
     redirect(`/tasks?error=${encodeURIComponent(error.message)}`);
+  }
+
+  let proofUrl = task.photo_proof_url;
+  if (task.photo_proof_url) {
+    const adminSupabase = createAdminClient();
+    const { data } = await adminSupabase.storage
+      .from("task-proofs")
+      .createSignedUrl(task.photo_proof_url, 60 * 60 * 24 * 7);
+    proofUrl = data?.signedUrl ?? task.photo_proof_url;
+  }
+
+  const pyrusError = await syncTaskWithPyrus(
+    supabase,
+    {
+      ...task,
+      description: reason || task.description,
+      status: "needs_fix",
+    },
+    "needs_fix",
+    proofUrl,
+  );
+
+  if (pyrusError) {
+    redirect(`/tasks?error=${encodeURIComponent(`Pyrus: ${pyrusError}`)}`);
   }
 
   redirect("/tasks");

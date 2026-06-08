@@ -247,18 +247,20 @@ export default async function TasksPage({
                           <span className="bg-cream-dark border border-beige rounded-full px-3 py-1">
                             Статус:{" "}
                             {t.status === "pending"
-                              ? "ожидает"
+                              ? "создано"
                               : t.status === "in_review"
                                 ? "на проверке"
-                                : t.status === "completed"
-                                  ? "выполнено"
-                                  : "отклонено"}
+                                : t.status === "needs_fix" || t.status === "rejected"
+                                  ? "нужны правки"
+                                  : t.status === "approved" || t.status === "completed"
+                                    ? "принято"
+                                    : t.status}
                           </span>
                         </div>
                       </div>
 
                       <div className="min-w-[240px] flex flex-col gap-3">
-                        {profile.role === "child" && (t.status === "pending" || t.status === "rejected") && (
+                        {profile.role === "child" && (t.status === "pending" || t.status === "needs_fix" || t.status === "rejected") && (
                           <form action={submitTaskAction} className="space-y-3">
                             <input type="hidden" name="taskId" value={t.id} />
                             <div>
@@ -268,7 +270,7 @@ export default async function TasksPage({
                               <input name="proof" type="file" accept="image/*" className="input-cozy" required />
                             </div>
                             <button className="btn-cozy w-full" type="submit">
-                              {t.status === "rejected" ? "Отправить повторно" : "Готово (на проверку)"}
+                              {t.status === "pending" ? "Готово (на проверку)" : "Отправить повторно"}
                             </button>
                           </form>
                         )}
@@ -311,7 +313,7 @@ export default async function TasksPage({
                           </div>
                         )}
 
-                        {t.status === "completed" && (
+                        {(t.status === "approved" || t.status === "completed") && (
                           <div className="text-sm text-text-muted">
                             Завершено: {formatDate(t.completed_at ?? null) ?? "—"}
                           </div>
