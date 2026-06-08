@@ -1,0 +1,4 @@
+{
+  "name": { "firstName": "Test", "lastName": "" },
+  "emails": { "primaryEmail": "test@test.com", "additionalEmails": [] }
+}

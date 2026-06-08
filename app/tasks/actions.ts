@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { createPyrusTaskReview } from "@/lib/pyrus";
 import { createClient } from "@/lib/supabase/server";
 
 function getString(formData: FormData, key: string) {
@@ -82,27 +83,38 @@ export async function submitTaskAction(formData: FormData) {
 
   const { supabase, user } = await getSession();
 
-  let photoProofUrl: string | null = null;
-  if (file instanceof File && file.size > 0) {
-    const safeName = file.name.replace(/[^\w.\-]+/g, "_");
-    const objectPath = `${taskId}/${Date.now()}-${safeName}`;
-    const { error: uploadError } = await supabase.storage
-      .from("task-proofs")
-      .upload(objectPath, file, { upsert: true });
+  if (!(file instanceof File) || file.size === 0) {
+    redirect("/tasks?error=Прикрепите фото-доказательство");
+  }
 
-    if (uploadError) {
-      console.error("submitTaskAction upload:", uploadError);
-      redirect(`/tasks?error=${encodeURIComponent(uploadError.message)}`);
-    }
+  if (!file.type.startsWith("image/")) {
+    redirect("/tasks?error=Доказательство должно быть картинкой или фотографией");
+  }
 
-    photoProofUrl = objectPath;
+  const maxProofSize = 10 * 1024 * 1024;
+  if (file.size > maxProofSize) {
+    redirect("/tasks?error=Фото-доказательство должно быть не больше 10 МБ");
+  }
+
+  const safeName = file.name.replace(/[^\w.\-]+/g, "_") || "proof.jpg";
+  const objectPath = `${taskId}/${Date.now()}-${safeName}`;
+  const { error: uploadError } = await supabase.storage
+    .from("task-proofs")
+    .upload(objectPath, file, {
+      contentType: file.type,
+      upsert: true,
+    });
+
+  if (uploadError) {
+    console.error("submitTaskAction upload:", uploadError);
+    redirect(`/tasks?error=${encodeURIComponent(uploadError.message)}`);
   }
 
   const { error } = await supabase
     .from("tasks")
     .update({
       status: "in_review",
-      photo_proof_url: photoProofUrl,
+      photo_proof_url: objectPath,
     })
     .eq("id", taskId)
     .eq("assigned_to", user.id);
@@ -110,6 +122,66 @@ export async function submitTaskAction(formData: FormData) {
   if (error) {
     console.error("submitTaskAction:", error);
     redirect(`/tasks?error=${encodeURIComponent(error.message)}`);
+  }
+
+  const { data: task } = await supabase
+    .from("tasks")
+    .select("id, title, description, status, points, deadline, family_id, assigned_to, created_by, photo_proof_url")
+    .eq("id", taskId)
+    .maybeSingle();
+
+  if (task) {
+    const [{ data: family }, { data: child }, { data: parent }] = await Promise.all([
+      supabase
+        .from("families")
+        .select("id, name")
+        .eq("id", task.family_id)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("id, email, first_name")
+        .eq("id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("id, email, first_name")
+        .eq("id", task.created_by)
+        .maybeSingle(),
+    ]);
+
+    let proofUrl = task.photo_proof_url;
+    if (task.photo_proof_url) {
+      const { data } = await supabase.storage
+        .from("task-proofs")
+        .createSignedUrl(task.photo_proof_url, 60 * 60 * 24 * 7);
+      proofUrl = data?.signedUrl ?? task.photo_proof_url;
+    }
+
+    try {
+      const result = await createPyrusTaskReview({
+        taskId: task.id,
+        title: task.title,
+        description: task.description,
+        status: "in_review",
+        points: task.points,
+        deadline: task.deadline,
+        familyId: task.family_id,
+        familyName: family?.name,
+        childId: user.id,
+        childName: child?.first_name,
+        childEmail: child?.email ?? user.email,
+        parentId: task.created_by,
+        parentName: parent?.first_name,
+        parentEmail: parent?.email,
+        proofUrl,
+      });
+
+      if (!result.skipped && !result.ok) {
+        console.warn("Pyrus BPMS sync failed:", result);
+      }
+    } catch (syncError) {
+      console.warn("Pyrus BPMS sync threw an error:", syncError);
+    }
   }
 
   redirect("/tasks");

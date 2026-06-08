@@ -256,17 +256,17 @@ export default async function TasksPage({
                       </div>
 
                       <div className="min-w-[240px] flex flex-col gap-3">
-                        {profile.role === "child" && t.status === "pending" && (
+                        {profile.role === "child" && (t.status === "pending" || t.status === "rejected") && (
                           <form action={submitTaskAction} className="space-y-3">
                             <input type="hidden" name="taskId" value={t.id} />
                             <div>
                               <label className="block text-sm font-medium text-text-secondary mb-2">
-                                Фото-подтверждение (опционально)
+                                Фото-подтверждение
                               </label>
-                              <input name="proof" type="file" accept="image/*" className="input-cozy" />
+                              <input name="proof" type="file" accept="image/*" className="input-cozy" required />
                             </div>
                             <button className="btn-cozy w-full" type="submit">
-                              Готово (на проверку)
+                              {t.status === "rejected" ? "Отправить повторно" : "Готово (на проверку)"}
                             </button>
                           </form>
                         )}
